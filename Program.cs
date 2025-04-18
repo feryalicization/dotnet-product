@@ -78,6 +78,17 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
 // ✅ Authorization
 builder.Services.AddAuthorization();
 
@@ -90,6 +101,9 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Product API V1");
     c.RoutePrefix = string.Empty; // 👉 Swagger opens on http://localhost:5117/
 });
+
+// cors
+app.UseCors("AllowAll");
 
 // ✅ Middleware for Auth
 app.UseAuthentication();
