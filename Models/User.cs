@@ -16,12 +16,13 @@ namespace ProductApi.Models
         [Required]
         public string PasswordHash { get; set; } = null!;
 
-        public string? Role { get; set; }
+        // Foreign Key for Role
+        [ForeignKey("Role")]
+        public int RoleId { get; set; }
+        public Role? Role { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
         public DateTime? UpdatedAt { get; set; }
-
         public DateTime? DeletedAt { get; set; }
     }
 }
