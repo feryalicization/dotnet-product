@@ -1,34 +1,74 @@
 using Microsoft.AspNetCore.Mvc;
-using ProductApi.Models;
 using ProductApi.Services;
+using ProductApi.Models;
 
-namespace ProductApi.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class ProductController : ControllerBase
+namespace ProductApi.Controllers
 {
-    private readonly IProductService _service;
-
-    public ProductController(IProductService service)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ProductController : ControllerBase
     {
-        _service = service;
-    }
+        private readonly IProductService _productService;
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
+        public ProductController(IProductService productService)
+        {
+            _productService = productService;
+        }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        var product = await _service.GetByIdAsync(id);
-        return product is null ? NotFound() : Ok(product);
-    }
+        // GET api/product
+        [HttpGet]
+        public async Task<IActionResult> GetAllProducts()
+        {
+            var products = await _productService.GetAllAsync();
+            return Ok(products);
+        }
 
-    [HttpPost]
-    public async Task<IActionResult> Create(Product product)
-    {
-        var created = await _service.AddAsync(product);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        // GET api/product/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProductById(int id)
+        {
+            var product = await _productService.GetByIdAsync(id);
+            if (product == null)
+            {
+                return NotFound();
+            }
+            return Ok(product);
+        }
+
+        // POST api/product
+        [HttpPost]
+        public async Task<IActionResult> CreateProduct([FromBody] Product product)
+        {
+            if (product == null)
+            {
+                return BadRequest();
+            }
+            var newProduct = await _productService.AddAsync(product);
+            return CreatedAtAction(nameof(GetProductById), new { id = newProduct.Id }, newProduct);
+        }
+
+        // PUT api/product/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product product)
+        {
+            if (id != product.Id)
+            {
+                return BadRequest();
+            }
+            var updatedProduct = await _productService.UpdateAsync(product);
+            return Ok(updatedProduct);
+        }
+
+        // DELETE api/product/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            var result = await _productService.DeleteAsync(id);
+            if (!result)
+            {
+                return NotFound();
+            }
+            return NoContent();
+        }
     }
 }
