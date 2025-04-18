@@ -13,46 +13,52 @@ namespace ProductApi.Services
             _context = context;
         }
 
-        // Get all products asynchronously
         public async Task<IEnumerable<Product>> GetAllAsync()
         {
-            return await _context.Products.ToListAsync();
+            return await _context.Products
+                .Where(p => p.DeletedAt == null)
+                .ToListAsync();
         }
 
-        // Get a product by id asynchronously
         public async Task<Product?> GetByIdAsync(int id)
         {
-            return await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+            return await _context.Products
+                .Where(p => p.DeletedAt == null)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        // Add a new product asynchronously
+
         public async Task<Product> AddAsync(Product product)
         {
+            product.CreatedAt = DateTime.UtcNow;
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
             return product;
         }
 
-        // Update product asynchronously
         public async Task<Product> UpdateAsync(Product product)
         {
-            _context.Products.Update(product);
+            var existing = await _context.Products.FirstOrDefaultAsync(p => p.Id == product.Id && p.DeletedAt == null);
+            if (existing == null) throw new Exception("Product not found");
+
+            existing.Name = product.Name;
+            existing.Description = product.Description;
+            existing.Price = product.Price;
+            existing.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
-            return product;
+            return existing;
         }
 
-        // Delete product by id asynchronously
         public async Task<bool> DeleteAsync(int id)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
-            if (product == null)
-            {
-                return false; // Product not found
-            }
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id && p.DeletedAt == null);
+            if (product == null) return false;
 
-            _context.Products.Remove(product);
+            product.DeletedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return true;
         }
+
     }
 }
