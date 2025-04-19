@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProductApi.Services;
 using ProductApi.Models;
 using Microsoft.AspNetCore.Authorization;
+using ProductApi.Dtos;
 
 namespace ProductApi.Controllers
 {
@@ -39,27 +40,51 @@ namespace ProductApi.Controllers
 
         // POST api/product
         [HttpPost]
-        public async Task<IActionResult> CreateProduct([FromBody] Product product)
+        public async Task<IActionResult> CreateProduct([FromBody] ProductCreateDto dto)
         {
-            if (product == null)
+            if (dto == null) return BadRequest();
+
+            var product = new Product
             {
-                return BadRequest();
-            }
+                Name = dto.Name,
+                Description = dto.Description,
+                Price = dto.Price
+            };
+
             var newProduct = await _productService.AddAsync(product);
             return CreatedAtAction(nameof(GetProductById), new { id = newProduct.Id }, newProduct);
         }
 
         // PUT api/product/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product product)
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductCreateDto dto)
         {
-            if (id != product.Id)
+            // Optional: Validate input (e.g., null dto or empty name)
+            if (dto == null)
             {
-                return BadRequest();
+                return BadRequest("Invalid product data.");
             }
-            var updatedProduct = await _productService.UpdateAsync(product);
-            return Ok(updatedProduct);
+
+            // Create a new Product instance with updated values
+            var updatedProduct = new Product
+            {
+                Id = id, // Important to include this for update
+                Name = dto.Name,
+                Description = dto.Description,
+                Price = dto.Price
+            };
+
+            try
+            {
+                var result = await _productService.UpdateAsync(updatedProduct);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
+
 
         // DELETE api/product/{id}
         [HttpDelete("{id}")]
